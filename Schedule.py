@@ -15,7 +15,7 @@ class Schedule:
     def add_lesson(self, study_course, room, lesson_type, lesson_number, teacher, date, subgroup):
         # calculating week and day indexes to access the necessary cell (weeks attribute)
 
-        def name_type(ls_type):
+        def get_type(ls_type):
             if ls_type == 'Л' or ls_type == 'L':
                 return 'лекція'
             elif ls_type.lower() == 'п' or ls_type.lower() == 'p':
@@ -29,7 +29,7 @@ class Schedule:
 
         index_week = int((date - self.start).days) // 7
         index_day = int((date - self.start).days) % 7
-        currentLesson = Lesson(study_course, room, name_type(lesson_type), lesson_number, teacher, date, subgroup)
+        currentLesson = Lesson(study_course, room, get_type(lesson_type), lesson_number, teacher, date, subgroup)
         self.lessons_list[index_week][index_day][lesson_number - 1] = currentLesson
         return self
 
