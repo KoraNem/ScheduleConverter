@@ -164,7 +164,6 @@ def create_spreadsheet(schedule):
     s_wb.save(filename)
     del s_wb
     del schedule
-    print(schedule)
 
 
 def apply_styles(workbook):
@@ -205,23 +204,23 @@ def apply_styles(workbook):
 
         return s_title, s_sub, s_day, s_date, s_disc, s_room, s_num, col_styles
 
-    def style_week(sheet, start, i, disc, room, num, date, fill1, fill2, f):
+    def style_week(sheet, start, i, disc, room, num, date, fill):
         sheet.merge_cells('A{}:A{}'.format(start, i + 1))
         for j in range(start, i + 2, 2):
-            # classes cells
+            # Lessons cells
             for k in sheet[j]:
                 k.style = disc
-                k.fill = fill1 if f % 2 == 0 else fill2
+                k.fill = fill
             for k in sheet[j + 1]:
                 k.style = room
-                k.fill = fill1 if f % 2 == 0 else fill2
+                k.fill = fill
 
-            # date cells styling
+            # Date cells styling
             sheet['A' + str(j)].style = date
             sheet['A' + str(j)].number_format = 'DD.MM'
             sheet['A' + str(j + 1)].style = date
 
-            # number cells styling
+            # Number cells styling
             sheet.merge_cells('B{}:B{}'.format(j, j + 1))
             sheet['B' + str(j)].style = num
             sheet['B' + str(j + 1)].style = num
@@ -245,7 +244,6 @@ def apply_styles(workbook):
     fill2 = PatternFill(fgColor=col2, fill_type='solid')
 
     # APPLYING STYLES
-
     # head section
     for i in sheet[1]:
         i.style = title
@@ -257,14 +255,14 @@ def apply_styles(workbook):
     # lessons section
     i = 4
     start = 4
-    f = 0
+    style = 0
     while sheet['B' + str(i)].value is not None:
-        if sheet['B' + str(i + 2)].value is None:
-            sheet = style_week(sheet, start, i, disc, room, num, date, fill1, fill2, f)
-        elif sheet['B' + str(i + 2)].value < sheet['B' + str(i)].value:
-            sheet = style_week(sheet, start, i, disc, room, num, date, fill1, fill2, f)
-            start = i + 2
-            f += 1
+        fill = fill1 if style % 2 == 0 else fill2
+        if sheet['B' + str(i + 2)].value is not None:
+            if sheet['B' + str(i + 2)].value < sheet['B' + str(i)].value:
+                sheet = style_week(sheet, start, i, disc, room, num, date, fill)
+                start = i + 2
+                style += 1
         i += 2
     return workbook
 
@@ -279,17 +277,14 @@ def main():
 
         try:
             fileText = import_file_contents(dir)
-
         except FileNotFoundError:
             print("Oops! It seems like there is no such file.")
             ans = input("Do you want to try again? (Y)es or (N)o? ")
             if ans.lower() == 'y':
                 continue
-
         else:
             schedule = process_data(fileText)
             create_spreadsheet(schedule)
-
         break
 
 
