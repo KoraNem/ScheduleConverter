@@ -273,8 +273,7 @@ def main():
         """Loop requests a name of the file until either the correct
         path is entered or the program is terminated by a user entering n."""
 
-        # dir = input("Enter the file name (path): ")
-        dir = 'IoT-11-2017-2.txt'
+        dir = input("Enter the file name (path): ")
 
         try:
             file_text = import_file_contents(dir)
