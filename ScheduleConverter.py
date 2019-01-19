@@ -258,11 +258,12 @@ def apply_styles(workbook):
     style = 0
     while sheet['B' + str(i)].value is not None:
         fill = fill1 if style % 2 == 0 else fill2
-        if sheet['B' + str(i + 2)].value is not None:
-            if sheet['B' + str(i + 2)].value < sheet['B' + str(i)].value:
-                sheet = style_week(sheet, start, i, disc, room, num, date, fill)
-                start = i + 2
-                style += 1
+        if sheet['B' + str(i + 2)].value is None:
+            sheet = style_week(sheet, start, i, disc, room, num, date, fill)
+        elif sheet['B' + str(i + 2)].value < sheet['B' + str(i)].value:
+            sheet = style_week(sheet, start, i, disc, room, num, date, fill)
+            start = i + 2
+            style += 1
         i += 2
     return workbook
 
@@ -276,14 +277,14 @@ def main():
         dir = 'IoT-11-2017-2.txt'
 
         try:
-            fileText = import_file_contents(dir)
+            file_text = import_file_contents(dir)
         except FileNotFoundError:
             print("Oops! It seems like there is no such file.")
             ans = input("Do you want to try again? (Y)es or (N)o? ")
             if ans.lower() == 'y':
                 continue
         else:
-            schedule = process_data(fileText)
+            schedule = process_data(file_text)
             create_spreadsheet(schedule)
         break
 
