@@ -1,5 +1,5 @@
-﻿"""
-The program processes schedule, which is given in the text format, and converts it into spreadsheet (.xlsx file)
+"""
+The program processes schedule given in the text file and converts it into a spreadsheet (.xlsx file)
 """
 
 import re
@@ -14,31 +14,42 @@ sch.weeks = [week = [day.periods=[period,period,period,period,...], day,day,day,
 
 
 class Schedule:
-    update = None
-    year = None
     group = None
+    year = None
     semester = None
-    start = None
-    weeks = [[[None for k in range(7)] for j in range(5)] for i in range(17)]
+    start = None  # date of the first lesson
+    lessons_list = [[[None for lesson in range(7)] for day in range(5)] for week in range(17)]
 
     def __init__(self, info):
-        # adding attributes
+        # main attributes of schedule
         self.group = info[0]
         self.year = info[1]
         self.semester = info[2]
         self.start = info[3]
 
-    def add_period(self, name, room, p_type, number, teacher, date, sub):
-        # calculating week and day indexes to access the necessary cell in the weeks attribute
-        num_of_w = int((date - self.start).days) // 7
-        day_of_w = int((date - self.start).days) % 7
-        self.weeks[num_of_w][day_of_w][number - 1] = Class(name, room, p_type, number, teacher, date, sub)
+    def add_lesson(self, study_course, room, lesson_type, lesson_number, teacher, date, subgroup):
+        # calculating week and day indexes to access the necessary cell (weeks attribute)
+
+        def name_type(ls_type):
+            if ls_type == 'Л' or ls_type == 'L':
+                return 'лекція'
+            elif ls_type.lower() == 'п' or ls_type.lower() == 'p':
+                return 'практика'
+            elif ls_type.lower() == 'с' or ls_type.lower() == 'c':
+                return 'семінар'
+            elif ls_type == 'л' or ls_type == 'l':
+                return 'лабораторна'
+            else:
+                return ls_type
+
+        index_week = int((date - self.start).days) // 7
+        index_day = int((date - self.start).days) % 7
+        currentLesson = Lesson(study_course, room, name_type(lesson_type), lesson_number, teacher, date, subgroup)
+        self.lessons_list[index_week][index_day][lesson_number - 1] = currentLesson
         return self
 
     def show(self):
-        """
-        функція відображає вміст поля weeks для перевірки коректності роботи програми
-        """
+        """функція відображає вміст поля weeks для перевірки коректності роботи програми"""
         print('Group: ', self.group)
         print('Year: ', self.year)
         print('Semester: ', self.semester)
@@ -47,75 +58,82 @@ class Schedule:
             print('\nweek {}'.format(i + 1))
             for j in range(5):  # days in week
                 print('day {}'.format(j + 1))
-                print(self.weeks[i][j])
+                print(self.lessons_list[i][j])
 
-    def export(self):
-        """
-        функція готує дані до передачі в файл xlsx
-        формат:
-            назва пари
-            аудиторія, тип, група
-            назва
-            аудиторія
-            ...
+    def create_spreadsheet(self):
+        """This method returns a list that will be used to create a spreadsheet
+                +==============+==============+==============+==============+==============+
+                |    course    |    course    |    course    |    course    |    course    |    rowCourseName
+                +--------------+--------------+--------------+--------------+--------------+
+                |room, subgroup|room, subgroup|room, subgroup|room, subgroup|room, subgroup|    rowLessonInfo
+                +==============+==============+==============+==============+==============+
+                |    course    |    course    |    course    |    course    |    course    |    rowCourseName
+                +--------------+--------------+--------------+--------------+--------------+
+                |room, subgroup|room, subgroup|room, subgroup|room, subgroup|room, subgroup|    rowLessonInfo
+                +==============+==============+==============+==============+==============+
 
-        цикл по 1х парах 5ти днів
-        цикл по аудиторіях 5ти днів
+                week 0
+                +===================================================+       цикл по тижнях:
+                |===========+=======================================+           цикл по парах:
+                |           |day0|day1|day2|day3|day4| rowCourseName|               цикл по днях:
+                |  lesson 0 |----+----+----+----+----+--------------+                   1. назва пари
+                |           |day0|day1|day2|day3|day4| rowLessonInfo|                   2. аудиторія + підгрупа
+                |===========+=======================================+
+                |           |day0|day1|day2|day3|day4| rowCourseName|
+                |  lesson 1 |----+----+----+----+----+--------------+
+                |           |day0|day1|day2|day3|day4| rowLessonInfo|
+                |===========+=======================================+
+                +===================================================+
         """
-        export_data = []
-        for i in range(17):
-            for j in range(7):
-                row_name = []
-                row_info = []
-                for k in range(5):
-                    if self.weeks[i][k][j]:
-                        row_name.append(self.weeks[i][k][j].discipline)
-                        if self.weeks[i][k][j].subgroup:
-                            row_info.append(self.weeks[i][k][j].room + ', група '
-                                            + self.weeks[i][k][j].subgroup)
+        spreadsheet_lessons = []
+
+        for week in range(17):
+            for lesson in range(7):
+                row_course = []
+                row_lesson_info = []
+
+                for day in range(5):
+                    if self.lessons_list[week][day][lesson]:
+                        row_course.append(self.lessons_list[week][day][lesson].course)
+
+                        if self.lessons_list[week][day][lesson].subgroup:
+                            row_lesson_info.append(self.lessons_list[week][day][lesson].room + ', підгрупа '
+                                                   + self.lessons_list[week][day][lesson].subgroup)
                         else:
-                            row_info.append(self.weeks[i][k][j].room)
+                            row_lesson_info.append(self.lessons_list[week][day][lesson].room + ', '
+                                                   + self.lessons_list[week][day][lesson].l_type)
                     else:
-                        row_name.append('')
-                        row_info.append('')
-                export_data.append(row_name)
-                export_data.append(row_info)
-        return export_data
+                        row_course.append('')
+                        row_lesson_info.append('')
+
+                spreadsheet_lessons.append(row_course)
+                spreadsheet_lessons.append(row_lesson_info)
+
+        return spreadsheet_lessons
 
 
-class Class:
-    discipline = None   # назва дисципліни
-    room = None         # номер пари
-    type = None         # тип пари: Л - лекція; П - практика; л - лабораторна.
-    number = None       # порядковий номер пари
-    teacher = None      # ім'я викладача
-    subgroup = None     # підгрупа
-    date = None         # дата проведення пари
-
-    def __init__(self, discipline, room, c_type, number, teacher, date, subgroup=None):
-        self.discipline = discipline
-        self.room = room
-        self.type = c_type
-        self.number = number
-        self.teacher = teacher
-        self.subgroup = subgroup
-        self.date = date
+class Lesson:
+    def __init__(self, course, room, l_type, number, teacher, date, subgroup=None):
+        """assigning values"""
+        self.course = course  # study course | назва дисципліни
+        self.room = room  # room number | номер аудиторії
+        self.l_type = l_type  # lesson type | тип пари: Л - лекція; П - практика; л - лабораторна.
+        self.number = number  # lesson sequence number | порядковий номер пари
+        self.teacher = teacher  # teacher | ім'я викладача
+        self.date = date  # lesson date | дата проведення пари
+        self.subgroup = subgroup  # subgroup number| підгрупа
 
 
-def import_from_file(directory):
-    """
-    function reads file and assigns its contents to variable schedule
-    """
+def import_file_contents(directory):
     txt = open(directory, "r", encoding='windows-1251')
-    schedule = txt.read()
+    schedule_txt = txt.read()
     txt.close()
-    return schedule
+    return schedule_txt
 
 
 def process_data(data):
     """
-    this function processes given data and returns it in a suitable for xlsx format form
-    it uses Schedule object to store the data and return the list that will be returned to spreadsheet
+    The function processes text from the file and returns a list that is used to create a spreadsheet
     """
 
     def get_header_info(header):
@@ -164,7 +182,7 @@ def process_data(data):
                         date_s = research(r'(?<=\().{5,11}(?=\))', n)
                         if len(date_s) == 5:
                             d = datetime.date(2018, int(date_s[3:]), int(date_s[:2]))
-                            sc.add_period(name, room, c_type, number, teacher, d, subgroup)
+                            sc.add_lesson(name, room, c_type, number, teacher, d, subgroup)
                         else:
                             dates = []
                             s_date = datetime.date(2018, int(date_s[3:5]), int(date_s[:2]))
@@ -174,30 +192,29 @@ def process_data(data):
                                 dates.append(s_date)
                                 s_date += shift
                                 for t in dates:
-                                    sc.add_period(name, room, c_type, number, teacher, t, subgroup)
+                                    sc.add_lesson(name, room, c_type, number, teacher, t, subgroup)
         return sc
 
     def research(regular, string):
         return re.search(re.compile(regular), string).group()
 
     # splitting schedule into sections (0 - general info, 1-5 - days)
-    divided_sched = re.split('-{2,}\n', data)
+    divided_schedule = re.split('-{2,}\n', data)
     # processing data from the first section
-    schedule_info = get_header_info(divided_sched[0])
+    schedule_info = get_header_info(divided_schedule[0])
     # creating Schedule object by passing it data from the firs section
     scd = Schedule(schedule_info)
     # processing info about classes and passing it to Schedule
-    scd = get_classes(scd, divided_sched[1:])
+    scd = get_classes(scd, divided_schedule[1:])
     # returning list of classes + info about schedule
-    exp = scd.export()
-    del scd
+    exp = scd.create_spreadsheet()
     return exp, schedule_info
 
 
 def export_to_excel(ex_data):
     """function takes ready data, creates xlsx file and passes all the information to it"""
 
-    def workbook_styles():
+    def workbook_styles_init():
         # COLORS
         blk = Color('000000')
         ttl = Color('992600')
@@ -290,7 +307,7 @@ def export_to_excel(ex_data):
     sheet['A2'] = 'Група {}, {}'.format(schedule_properties[0], schedule_properties[1])
 
     # IMPORTING STYLES
-    title, subtitle, day, date, disc, room, num, col_st = workbook_styles()
+    title, subtitle, day, date, disc, room, num, col_st = workbook_styles_init()
     s_wb.add_named_style(title)
     s_wb.add_named_style(subtitle)
     s_wb.add_named_style(day)
@@ -354,21 +371,28 @@ def export_to_excel(ex_data):
     del s_wb
 
 
-"""
-Program
-"""
+def main():
+    while True:
+        """Loop requests a name of the file until either the correct
+        path is entered or the program is terminated by a user entering n."""
 
-while True:
-    dir = input('Enter the file name (path): ')
-    try:
-        dat = import_from_file(dir)
-    except FileNotFoundError:
-        print('Oops! It seems like there is no such file.')
-        ans = input('Do you want to try again? (Y)es or (N)o? ')
-        if ans != 'Y' or ans != 'y':
-            break
-        print('\n')
-        continue
-    n = process_data(dat)
-    export_to_excel(n)
-    break
+        dir = input("Enter the file name (path): ")
+
+        try:
+            fileText = import_file_contents(dir)
+
+        except FileNotFoundError:
+            print("Oops! It seems like there is no such file.")
+            ans = input("Do you want to try again? (Y)es or (N)o? ")
+            if ans.lower() == 'y':
+                continue
+
+        else:
+            processOutput = process_data(fileText)
+            export_to_excel(processOutput)
+
+        break
+
+
+if __name__ == "__main__":
+    main()
