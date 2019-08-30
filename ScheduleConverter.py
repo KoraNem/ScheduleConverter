@@ -121,7 +121,7 @@ def create_spreadsheet(schedule):
     sheet.insert_cols(0, 2)
     curr_date = schedule.start
     shift = datetime.timedelta(days=7)
-    i = 2 # row number
+    i = 2  # row number
     while sheet['C' + str(i)].value is not None:
         for j in range(0, 14, 2):
             sheet['A' + str(i + j)] = curr_date
