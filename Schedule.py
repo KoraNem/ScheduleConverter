@@ -99,13 +99,12 @@ class Schedule:
                     if self.lessons_list[week][day][lesson]:
                         # lesson name
                         row_course.append(self.lessons_list[week][day][lesson].course)
-                        # lesson info (room+type+subgroup)
+                        # lesson information (room+type+subgroup(optional))
+                        temp_info = (self.lessons_list[week][day][lesson].room + ', '
+                                     + self.lessons_list[week][day][lesson].l_type)
                         if self.lessons_list[week][day][lesson].subgroup:
-                            row_lesson_info.append(self.lessons_list[week][day][lesson].room + ', підгрупа '
-                                                   + self.lessons_list[week][day][lesson].subgroup)
-                        else:
-                            row_lesson_info.append(self.lessons_list[week][day][lesson].room + ', '
-                                                   + self.lessons_list[week][day][lesson].l_type)
+                            temp_info += ', підгрупа ' + self.lessons_list[week][day][lesson].subgroup
+                        row_lesson_info.append(temp_info)
                     else:
                         row_course.append('')
                         row_lesson_info.append('')
