@@ -4,14 +4,17 @@ from Schedule import Schedule
 
 
 def research(regular, string):
-    return re.search(re.compile(regular), string).group()
+    if re.search(re.compile(regular), string):
+        return re.search(re.compile(regular, re.I | re.U), string).group()
+    else:
+        print("There is no any {} pattern in string:\n{}".format(regular, string))
 
 
-def get_header_info(header):
-    group = research(r'(?<=Група )\w{2,3}(-\d{2})*', header)                    # (Група ){www-dd}
-    year = research(r'\d{4}-\d{4} н.р.', header)                                # {dddd-dddd} н.р.
-    semester = 1 if research(r'\w+(?= семестр)', header) is 'І' else 2          # I/II( семестр)
-    first_monday = research(r'\d{2}.\d{2} ', header)[:-1]                       # dd.dd\
+def process_header(header):
+    group = research(r'(?<=Група )\w{2,3}(-\d{2})*', header)                         # (Група ){www-dd}
+    year = research(r'\d{4}-\d{4} н.р.', header)                                     # {dddd-dddd} н.р.
+    semester = 1 if research(r'\w+(?= семестр)', header) is 'І' or 'осінній' else 2  # I/II( семестр) new: осінній
+    first_monday = research(r'\d{2}.\d{2} ', header)[:-1]                            # dd.dd
 
     start_date = datetime.date(int(year[0:4]) if semester == 1
                                else int(year[5:9]), int(first_monday[3:]), int(first_monday[:2]))
@@ -22,7 +25,7 @@ def get_header_info(header):
     return group, year, semester, start_date
 
 
-def get_classes(schedule, day_desc_list):
+def process_lessons(schedule, day_desc_list):
     """The function analyzes data about periods and passes it to class Schedule"""
     year = schedule.start.year
 
@@ -30,7 +33,7 @@ def get_classes(schedule, day_desc_list):
 
     # Loop through DAYS of week ====================================================================================
     for i in range(len(day_desc_list)):
-        lessons_of_the_day = re.split(r'\n(?=\d пара)', day_desc_list[i])  # [day, num+disclist, num+disclist, ...]
+        lessons_of_the_day = re.split(r'\n(?=\d пара)', day_desc_list[i])  # [day, num+disc_list, num+disc_list, ...]
 
         # Loop through LESSONS -------------------------------------------------------------------------------------
         for j in range(1, len(lessons_of_the_day)):
@@ -41,18 +44,19 @@ def get_classes(schedule, day_desc_list):
             # Loop through COURSES *********************************************************************************
             for crs in range(1, len(courses_at_lesson)):
                 # Getting the name of the COURSE
-                study_course = research(r'.+(?= \(\w\))', courses_at_lesson[crs])
-                # Excluding speciality from name of the course
+                study_course = research(r'.+(?=\(\w\))', courses_at_lesson[crs])
+                # Excluding speciality from the name of the course
                 study_course = re.sub(re.compile(r'\(.+\)'), '', study_course)
                 subgroup = None
                 # If a subgroup number is present, it is assigned to the variable and excluded from the name
                 if re.search(re.compile(r'\d'), study_course):
                     subgroup = research(r'\d', study_course)
                     study_course = re.sub(re.compile(r'\s*\d\s*'), '', study_course)
-                    study_course = re.sub(re.compile(r'підгр?|підгрупа|група'), '', study_course)
+                    study_course = re.sub(re.compile(r'\s*-\s*'), '', study_course)
+                    study_course = re.sub(re.compile(r'підгр\.?|підгрупа|група'), '', study_course)
 
-                lesson_type = research(r'(?<=\()\w(?=\))', courses_at_lesson[crs]) # (w)
-                teacher = research(r'(?<=\[).+(?=\])', courses_at_lesson[crs]) # [name]
+                lesson_type = research(r'(?<=\()\w(?=\))', courses_at_lesson[crs])  # (w)
+                teacher = research(r'(?<=\[).+(?=\])', courses_at_lesson[crs])  # [name]
 
                 # Getting room numbers and dates
                 rooms_list = re.findall(re.compile(r'ауд.\d{3} \(.{5,11}\)'), courses_at_lesson[crs])
@@ -83,9 +87,9 @@ def process_data(data):
     # Splitting schedule into sections (0 - general info, 1-5 - days)
     divided_schedule = re.split('-{2,}\n', data)
 
-    schedule_info = get_header_info(divided_schedule[0])
+    schedule_info = process_header(divided_schedule[0])
     scd = Schedule(schedule_info)
     # processing info about classes and passing it to Schedule
-    scd = get_classes(scd, divided_schedule[1:])
+    scd = process_lessons(scd, divided_schedule[1:])
 
     return scd

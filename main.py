@@ -9,7 +9,7 @@ from workbook_styles import apply_styles
 
 
 def import_file_contents(directory):
-    txt = open(directory, "r", encoding='windows-1251')
+    txt = open(directory, "r")
     schedule_txt = txt.read()
     txt.close()
     return schedule_txt
@@ -41,7 +41,7 @@ def create_spreadsheet(schedule):
             sheet['B' + str(i + j)] = (j + 2) // 2
         curr_date += shift
         i += 14
-    sheet.insert_rows(0,2)
+    sheet.insert_rows(0, 2)
     # header
     sheet['A1'] = 'РОЗКЛАД НА {} СЕМЕСТР'.format(schedule.semester)
     sheet['A2'] = 'Група {}, {}'.format(schedule.group, schedule.year)
@@ -73,8 +73,16 @@ def create_spreadsheet(schedule):
     s_wb = apply_styles(s_wb)
 
     # SAVING SPREADSHEET
-    print('File {} is successfully saved'.format(filename))
-    s_wb.save(filename)
+    while True:
+        try:
+            s_wb.save(filename)
+        except PermissionError:
+            print('Please, close the existing {} file to save a new one!!!'.format(filename), end='')
+            input()
+        else:
+            print('File {} is successfully saved'.format(filename))
+            break
+
     del s_wb
     del schedule
 
@@ -84,10 +92,10 @@ def main():
         """Loop requests a name of the file until either the correct
         path is entered or the program is terminated by a user entering n."""
 
-        dir = input("Enter the file name (path): ")
+        directory = input("Enter the file name (path): ")
 
         try:
-            file_text = import_file_contents(dir)
+            file_text = import_file_contents(directory)
         except FileNotFoundError:
             print("Oops! It seems like there is no such file.")
             ans = input("Do you want to try again? (Y)es or (N)o? ")
