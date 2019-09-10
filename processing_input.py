@@ -67,7 +67,8 @@ def subgroup_number(study_course):
 
 def room_date(course, year):
     result = []
-    for rm in re.split(re.compile('\|'), course)[1:]:
+    courses = re.split(re.compile('\|'), course)[1:]
+    for rm in courses:
         room = re.findall(re.compile(r'ауд\.\d{3}'), rm)[0]
         room_dates = re.findall(re.compile(r'(?<=\().{5,11}(?=\))'), rm)
         print(room, room_dates)
@@ -138,7 +139,7 @@ def process_lessons(schedule, day_desc_list):
                 if re.search(re.compile(r'\d'), study_course):
                     subgroup = research(r'\d', study_course)
                     study_course = re.sub(re.compile(r'\s*\d\s*'), '', study_course)
-                    study_course = re.sub(re.compile(r'\s*-\s*'), '', study_course)
+                    study_course = re.sub(re.compile(r'\s*-|–\s*'), '', study_course)
                     study_course = re.sub(re.compile(r'підгр\.?|підгрупа|група'), '', study_course)
                 # Results example: "Теорія алгоритмів", "Електротехніка та електроніка", "Технології програмування"
 
@@ -146,26 +147,10 @@ def process_lessons(schedule, day_desc_list):
                 teacher = research(r'(?<=\[).+(?=\])', courses_at_lesson[crs])  # [name]
 
                 # Getting ROOM numbers and DATES
-                rooms_list = re.findall(re.compile(r'ауд.\d{3}( \(.{5,11}\))+'), courses_at_lesson[crs])
-                for rm in rooms_list:
-                    room = research(r'ауд.\d{3}', rm)
+                room_date_rel = room_date(courses_at_lesson[crs], year)
+                for rm_dt in room_date_rel:
+                    schedule.add_lesson(study_course, rm_dt[0], lesson_type, lesson_number, teacher, rm_dt[1], subgroup)
 
-                    room_dates = research(r'(?<=\().{5,11}(?=\))', rm)
-                    # Depending on a number of dates 1+ lessons can be added at once
-                    if len(room_dates) == 5:
-                        dt = datetime.date(year, int(room_dates[3:]), int(room_dates[:2]))
-                        schedule.add_lesson(study_course, room, lesson_type, lesson_number, teacher, dt, subgroup)
-                    else:
-                        list_of_dates = []
-                        first_date = datetime.date(year, int(room_dates[3:5]), int(room_dates[:2]))
-                        last_date = datetime.date(year, int(room_dates[9:]), int(room_dates[6:8]))
-                        shift = datetime.timedelta(days=7)
-                        while first_date <= last_date:
-                            list_of_dates.append(first_date)
-                            first_date += shift
-                            for dt in list_of_dates:
-                                schedule.add_lesson(study_course, room, lesson_type,
-                                                    lesson_number, teacher, dt, subgroup)
     return schedule
 
 

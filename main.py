@@ -93,7 +93,7 @@ def main():
         path is entered or the program is terminated by a user entering n."""
 
         directory = input("Enter the file name (path): ")
-
+        directory = "data_source_files/IoT31.txt"
         try:
             file_text = import_file_contents(directory)
         except FileNotFoundError:
