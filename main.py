@@ -1,17 +1,24 @@
 """
 The program processes schedule given in the text file and converts it into a spreadsheet (.xlsx file)
 """
-
+from os import remove
 import datetime
 import openpyxl
 from processing_input import process_data
 from workbook_styles import apply_styles
+from pdf_to_txt import pdf_txt
 
 
-def import_file_contents(directory):
-    txt = open(directory, "r")
+def import_file_contents(directory, filename):
+    if filename[-3:] == "pdf":
+        pdf_txt(directory + '\\' + filename)
+        txt = open(filename[:-3] + "txt", "r")
+    else:
+        txt = open(directory + '\\' + filename, "r")
     schedule_txt = txt.read()
     txt.close()
+    if filename[-3:] == "pdf":
+        remove(filename[:-3] + "txt")
     return schedule_txt
 
 
@@ -92,10 +99,10 @@ def main():
         """Loop requests a name of the file until either the correct
         path is entered or the program is terminated by a user entering n."""
 
-        directory = input("Enter the file name (path): ")
-        directory = "data_source_files/IoT31.txt"
+        directory = input("Enter the path to directory: ")
+        filename = input("Enter the file name: ")
         try:
-            file_text = import_file_contents(directory)
+            file_text = import_file_contents(directory, filename)
         except FileNotFoundError:
             print("Oops! It seems like there is no such file.")
             ans = input("Do you want to try again? (Y)es or (N)o? ")

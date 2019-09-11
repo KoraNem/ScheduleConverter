@@ -156,8 +156,8 @@ def process_lessons(schedule, day_desc_list):
 
 def process_data(data):
     """The function processes text from the file and returns a list that is used to create a spreadsheet"""
-    # Splitting schedule into sections (0 - general info, 1-5 - days) by "----...----\n" pattern (2+ dashes in line)
-    divided_schedule = re.split('-{2,}\n', data)
+    # Splitting schedule into sections (0 - general info, 1-5 - days) by "----...----" pattern (2+ dashes in line)
+    divided_schedule = re.split('-{2,}\n*', data)
 
     schedule_info = process_header(divided_schedule[0])
     scd = Schedule(schedule_info)
